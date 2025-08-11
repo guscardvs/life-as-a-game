@@ -1,0 +1,55 @@
+import contextlib
+from inspect import isclass
+from typing import Any, TypeIs, cast
+
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.sql import ColumnElement
+
+from app.utils.database.entity import AbstractEntity
+
+from .interface import FieldType, Mapper
+
+
+def retrieve_attr(entity: Mapper, field: str) -> FieldType:
+    is_entity = _is_entity(entity)
+    if field == "id" and is_entity:
+        field = "id_"
+    if "." in field:
+        if is_entity:
+            return _retrieve_related_field(entity, field)
+        raise AttributeError("query", field)
+    try:
+        with contextlib.suppress(AttributeError):
+            return getattr(entity, field)
+        return getattr(entity.c, field)  # type: ignore
+    except AttributeError:
+        name = entity.__name__ if is_entity else "query"
+        raise AttributeError(name, field) from None
+
+
+def _is_entity(entity: Mapper) -> TypeIs[type[AbstractEntity]]:
+    return isclass(entity) and issubclass(
+        entity, AbstractEntity | DeclarativeBase
+    )
+
+
+def _retrieve_related_field(
+    entity: type[AbstractEntity], field: str
+) -> FieldType:
+    *fields, target_field = field.split(".")
+    current_mapper = entity
+    for f in fields:
+        if f == "id":
+            f = "id_"
+        try:
+            attr = cast(ColumnElement[Any], getattr(current_mapper, f))
+        except AttributeError:
+            raise AttributeError(entity.__name__, f) from None
+        else:
+            current_mapper = attr.entity.class_
+    if target_field == "id":
+        target_field = "id_"
+    try:
+        return getattr(current_mapper, target_field)
+    except AttributeError:
+        raise AttributeError(entity.__name__, field) from None

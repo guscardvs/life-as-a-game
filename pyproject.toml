@@ -1,0 +1,45 @@
+[project]
+name = "life-as-a-game"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.16.4",
+    "argon2-cffi>=25.1.0",
+    "asyncpg>=0.30.0",
+    "blacksheep>=2.4.0",
+    "escudeiro>=0.2.15",
+    "granian[reload,uvloop]>=2.5.0",
+    "loguru>=0.7.3",
+    "msgspec>=0.19.0",
+    "psycopg>=3.2.9",
+    "pyjwt>=2.10.1",
+    "sqlalchemy>=2.0.42",
+    "uuid7>=0.1.0",
+    "valkey[libvalkey]>=6.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.21.0",
+    "fakeredis[valkey]>=2.30.3",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-env>=1.1.5",
+    "ruff>=0.12.7",
+]
+
+[tool.ruff]
+line-length = 80
+unsafe-fixes = true
+
+[tool.ruff.lint]
+extend-select = ["I", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+
+[tool.pytest_env]
+CONFIG_ENV = "test"

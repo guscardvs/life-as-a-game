@@ -1,0 +1,42 @@
+services:
+  app:
+    build: .
+    container_name: life-as-a-game-app
+    env_file:
+      - envs/local.container.env
+    ports:
+      - "18000:18000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./app:/app/app
+      - ./migrations:/app/migrations
+      - ./envs/local.container.env:/app/envs/local.container.env
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    container_name: life-as-a-game-db
+    environment:
+      POSTGRES_DB: life_as_a_game
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: valkey/valkey:8
+    container_name: life-as-a-game-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
