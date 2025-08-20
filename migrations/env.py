@@ -32,7 +32,6 @@ def process_revision_directives(
     head_revision = ScriptDirectory.from_config(
         context.config
     ).get_current_head()
-
     if head_revision is None:
         # edge case with first migration
         new_rev_id = 1

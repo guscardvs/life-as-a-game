@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar, Literal, TypedDict, cast
 
 from blacksheep import Request
@@ -11,6 +12,7 @@ class TokenClaims(TypedDict):
     exp: int  # Expiration time (timestamp)
     iat: int  # Issued at time (timestamp)
     jti: str  # JWT ID (unique identifier for the token)
+    tid: str  # Token ID (unique identifier for the session)
     token_type: Literal[
         "access", "refresh"
     ]  # Type of token (access or refresh)
@@ -30,6 +32,25 @@ class Authentication(Identity):
     @property
     def token(self) -> str:
         return cast(str, self.access_token)
+
+    @property
+    def roles(self) -> Sequence[str]:
+        return cast(Sequence[str], self.claims.get("roles", []))
+
+    @roles.setter
+    def roles(self, value: Sequence[str]) -> None:
+        self.claims["roles"] = value
+
+    @property
+    def groups(self) -> Sequence[str]:
+        return cast(Sequence[str], self.claims.get("groups", []))
+
+    @groups.setter
+    def groups(self, value: Sequence[str]) -> None:
+        self.claims["groups"] = value
+
+    def roles_intersect(self, roles: Sequence[str]) -> bool:
+        return bool(set(self.roles) & set(roles))
 
 
 Authenticated = "authenticated"

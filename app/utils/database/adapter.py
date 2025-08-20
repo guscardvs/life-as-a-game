@@ -119,7 +119,7 @@ class DatabaseAdapter(AtomicAsyncAdapter[sa_async.AsyncConnection]):
         """
         Create a session adapter for the database connection.
         """
-        return SessionAdapter(provider=self, debug=self.debug)
+        return SessionAdapter(self.context(), self.debug)
 
 
 @data
@@ -128,7 +128,7 @@ class SessionAdapter(AtomicAsyncAdapter[sa_async.AsyncSession]):
     Session adapter for SQLAlchemy.
     """
 
-    provider: DatabaseAdapter
+    _internal_context: AsyncAtomicContext[sa_async.AsyncConnection]
     debug: bool = False
 
     @override
@@ -136,7 +136,9 @@ class SessionAdapter(AtomicAsyncAdapter[sa_async.AsyncSession]):
         """
         Create a new session.
         """
-        return sa_async.AsyncSession(bind=await self.provider.new())
+        return sa_async.AsyncSession(
+            bind=await self._internal_context.acquire()
+        )
 
     def _get_bind(
         self, session: sa_async.AsyncSession
@@ -151,20 +153,20 @@ class SessionAdapter(AtomicAsyncAdapter[sa_async.AsyncSession]):
         """
         Check if the session is closed.
         """
-        return self._get_bind(client).closed
+        return self._internal_context.is_active()
 
     @override
     async def release(self, client: sa_async.AsyncSession) -> None:
         """
         Release the session.
         """
-        await self._get_bind(client).close()
+        await self._internal_context.release()
 
     async def aclose(self) -> None:
         """
         Close the session.
         """
-        await self.provider.aclose()
+        # not applicable
 
     async def _do_with_transaction(
         self,

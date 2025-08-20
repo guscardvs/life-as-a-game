@@ -1,10 +1,10 @@
 from app.settings import DEBUG, SERVER_SETTINGS
 
 if __name__ == "__main__":
-    from granian import Granian  # pyright: ignore[reportPrivateImportUsage]
     from granian.constants import Interfaces
+    from granian.server import Server
 
-    Granian(
+    Server(
         "app.main:app",
         address=SERVER_SETTINGS.host,
         port=SERVER_SETTINGS.port,

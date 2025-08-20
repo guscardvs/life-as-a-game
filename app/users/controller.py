@@ -5,7 +5,7 @@ from blacksheep import get, json, post
 from blacksheep.server.openapi.common import ContentInfo, ResponseInfo
 
 from app.authentication.handler import protected
-from app.authentication.typedef import AuthenticatedRequest
+from app.authentication.typedef import AuthenticatedRequest, Authentication
 from app.users import schemas
 from app.users.domain import CreateUserUseCase
 from app.users.schemas import UserSchema
@@ -45,8 +45,8 @@ class UsersController(DefaultController):
     @get("/me")
     @protected
     @enforce_out(schemas.UserOutSchema)
-    async def get_me(self, request: AuthenticatedRequest) -> UserSchema:
+    async def get_me(self, identity: Authentication) -> UserSchema:
         """
         Get the current user.
         """
-        return request.identity.user
+        return identity.user

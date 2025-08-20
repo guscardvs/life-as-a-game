@@ -18,7 +18,7 @@ from app.authentication.schemas import (
 from app.authentication.typedef import AuthenticatedRequest
 from app.utils.cache import CacheContext
 from app.utils.database import SessionContext
-from app.utils.msgspec import FromMsgSpecForm, enforce_out
+from app.utils.msgspec import FromMsgSpec, FromMsgSpecForm, enforce_out
 from app.utils.server import DefaultController
 
 
@@ -45,7 +45,7 @@ class AuthController(DefaultController):
     @enforce_out(SessionResponse)
     async def refresh(
         self,
-        payload: FromMsgSpecForm[RefreshTokenSchema],
+        payload: FromMsgSpec[RefreshTokenSchema],
         context: SessionContext,
         cache: CacheContext,
     ) -> CreateSessionResponse:

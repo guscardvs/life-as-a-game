@@ -1,3 +1,4 @@
+from guardpost import Policy
 import msgspec
 from blacksheep import Application
 from blacksheep.settings.json import json_settings
@@ -8,6 +9,12 @@ from app.authentication.handler import (
     authentication_scheme,
     make_auth_handler,
 )
+from app.authorization.handler import (
+    AdminRequirement,
+    AuthorizationHandler,
+    SuperuserRequirements,
+)
+from app.authorization.typedef import Admin, Superuser
 from app.settings import CACHE_CONFIG, DATABASE_CONFIG, DEBUG, ROOT
 from app.utils.cache import make_cache_setup
 from app.utils.database.adapter import make_database_setup, teardown_database
@@ -43,7 +50,12 @@ def get_application() -> Application:
     app.on_start += make_cache_setup(CACHE_CONFIG)
     app.on_stop += teardown_database
     setup_operation(app)
-    make_auth_handler(app)
+    _ = make_auth_handler(
+        app,
+        AuthorizationHandler,
+        Policy(Superuser, SuperuserRequirements()),
+        Policy(Admin, AdminRequirement()),
+    )
 
     return app
 

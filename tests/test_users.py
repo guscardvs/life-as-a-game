@@ -3,9 +3,10 @@ from datetime import date
 from http import HTTPStatus
 
 import msgspec
+import pytest
 from blacksheep import Content
 from blacksheep.testing import TestClient
-import pytest
+from escudeiro.url import Query
 
 from app.users import schemas
 from app.utils.msgspec import registry
@@ -157,3 +158,28 @@ class TestCreateUser:
             expected_detail
         )
         assert errors["status_code"] == HTTPStatus.UNPROCESSABLE_CONTENT
+
+
+class TestGetUser:
+    async def test_get_user_success(
+        self,
+        test_client: TestClient,
+        user: tuple[schemas.CreateUserSchema, schemas.UserOutSchema],
+        auth_headers: dict[str, str],
+    ):
+        _, expected_user = user
+        response = await test_client.get(
+            "/users/me",
+            headers=auth_headers,
+        )
+        assert response.status == 200
+        user_data = registry.require_decoder(schemas.UserOutSchema)(
+            await response.read()
+        )
+        assert user_data.id_ == expected_user.id_
+        assert user_data.email == expected_user.email
+        assert user_data.full_name == expected_user.full_name
+        assert user_data.birth_date == expected_user.birth_date
+        assert "password" not in await response.json()
+        assert user_data.created_at is not None
+        assert user_data.updated_at is not None

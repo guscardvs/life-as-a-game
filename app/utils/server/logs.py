@@ -4,6 +4,7 @@ from logging import INFO
 from typing import TYPE_CHECKING, Any, cast
 
 from blacksheep import Application, Request, Response
+from escudeiro.config import Env, get_env
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 from rodi import Container
@@ -25,7 +26,11 @@ def _format_log_message(record: "Record") -> str:
 def make_log_middleware(app: Application):
     services = cast(Container, app.services)
     logger.remove()
-    _ = logger.add(sys.stderr, level=INFO, format=_format_log_message)
+    _ = logger.add(
+        sys.stderr,
+        level=INFO if get_env() is not Env.TEST else "CRITICAL",
+        format=_format_log_message,
+    )
 
     @app.middlewares.append
     async def log_request_response(

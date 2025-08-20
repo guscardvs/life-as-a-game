@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: valkey/valkey:8
+    image: redis:8-alpine
     container_name: life-as-a-game-redis
     ports:
       - "6379:6379"

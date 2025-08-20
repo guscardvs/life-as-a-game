@@ -31,6 +31,7 @@ from .query.where import (
     or_,
 )
 from .repository import Repository
+from .tables import create_relation_table
 
 __all__ = [
     "AbstractEntity",
@@ -46,6 +47,7 @@ __all__ = [
     "CommonMixin",
     "comparison",
     "ConnectionContext",
+    "create_relation_table",
     "DatabaseAdapter",
     "DatabaseConfig",
     "DefaultEntity",

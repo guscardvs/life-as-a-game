@@ -8,10 +8,11 @@ from uuid import UUID
 import jwt
 from escudeiro.data import data
 from escudeiro.misc import timezone
+from uuid_extensions import uuid7
 
 from app.authentication.schemas import CreateSessionResponse
 from app.authentication.typedef import TokenClaims
-from app.settings import PRIMARY_SECRET
+from app.settings import PRIMARY_SECRET, SECONDARY_SECRET
 from app.users.domain import GetUserUseCase
 from app.users.schemas import UserSchema
 from app.utils.cache import CacheContext, asserts_async
@@ -20,8 +21,8 @@ from app.utils.server import invalid_or_expired_token
 from app.utils.server.exceptions import APIError, unexpected_error
 
 ALGORITHM = "HS256"
-JWT_TOKEN_EXPIRES = timedelta(minutes=5)
-REFRESH_TOKEN_EXPIRES = timedelta(days=7)
+JWT_TOKEN_EXPIRES: timedelta = timedelta(minutes=5)
+REFRESH_TOKEN_EXPIRES: timedelta = timedelta(days=7)
 
 
 @data
@@ -58,13 +59,14 @@ class AuthenticationService:
         """
         issued_at = timezone.now().replace(microsecond=0)
         user_id = user.id_.hex
-        jti = self._generate_signature(user_id, issued_at)
-
+        token_id = cast(UUID, uuid7()).hex
+        jti = self._generate_signature(user_id, issued_at, token_id)
         access_claims: TokenClaims = {
             "sub": user_id,
             "exp": self.as_timestamp(issued_at + JWT_TOKEN_EXPIRES),
             "iat": self.as_timestamp(issued_at),
             "jti": jti,
+            "tid": token_id,
             "token_type": "access",
         }
         refresh_claims: TokenClaims = {
@@ -72,6 +74,7 @@ class AuthenticationService:
             "exp": self.as_timestamp(issued_at + REFRESH_TOKEN_EXPIRES),
             "iat": self.as_timestamp(issued_at),
             "jti": jti,
+            "tid": token_id,
             "token_type": "refresh",
         }
         access_token = self.encode_claims(access_claims)
@@ -91,23 +94,27 @@ class AuthenticationService:
             jti=jti,
         )
 
-    def _generate_signature(self, user_id: str, issued_at: datetime) -> str:
+    def _generate_signature(
+        self, user_id: str, issued_at: datetime, token_id: str
+    ) -> str:
         """
         Generates a unique signature for the session.
         """
         return hmac.new(
-            key=PRIMARY_SECRET.encode(),
-            msg=f"{user_id}-{issued_at.isoformat()}".encode(),
+            key=SECONDARY_SECRET.encode(),
+            msg=f"{user_id}-{issued_at.isoformat()}-{token_id}".encode(),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
     def _validate_signature(
-        self, user_id: str, issued_at: datetime, signature: str
+        self, user_id: str, issued_at: datetime, token_id: str, signature: str
     ) -> bool:
         """
         Validates the session signature.
         """
-        expected_signature = self._generate_signature(user_id, issued_at)
+        expected_signature = self._generate_signature(
+            user_id, issued_at, token_id
+        )
         return hmac.compare_digest(expected_signature, signature)
 
     async def validate_token(self, token: str) -> UserSchema:
@@ -119,11 +126,12 @@ class AuthenticationService:
             raise invalid_or_expired_token()
         jti = claims["jti"]
         user_id = claims["sub"]
+        token_id = claims["tid"]
         issued_at = datetime.fromtimestamp(
             claims["iat"],
             tz=timezone._DEFAULT_TZ,  # pyright: ignore[reportPrivateUsage]
         )
-        if not self._validate_signature(user_id, issued_at, jti):
+        if not self._validate_signature(user_id, issued_at, token_id, jti):
             raise invalid_or_expired_token()
 
         async with self.cache as redis:
@@ -146,11 +154,12 @@ class AuthenticationService:
             raise invalid_or_expired_token()
         jti = claims["jti"]
         user_id = claims["sub"]
+        token_id = claims["tid"]
         issued_at = datetime.fromtimestamp(
             claims["iat"],
             tz=timezone._DEFAULT_TZ,  # pyright: ignore[reportPrivateUsage]
         )
-        if not self._validate_signature(user_id, issued_at, jti):
+        if not self._validate_signature(user_id, issued_at, token_id, jti):
             raise invalid_or_expired_token()
 
         async with self.cache as redis:
@@ -158,11 +167,14 @@ class AuthenticationService:
             if cached_id is None:
                 raise invalid_or_expired_token()
             _ = await asserts_async(redis.hdel)(user_id, jti)
-
-        user = await GetUserUseCase(
-            self.context, Where("id_", user_id)
-        ).execute()
-        return await self.create_session(user)
+        try:
+            user = await GetUserUseCase(
+                self.context, Where("id_", UUID(user_id))
+            ).execute()
+        except APIError:
+            raise invalid_or_expired_token() from None
+        else:
+            return await self.create_session(user)
 
     async def revoke_session(self, token: str) -> None:
         """

@@ -111,10 +111,13 @@ class MsgspecQueryBinder(SyncBinder):
         return msgspec.convert(value, self.expected_type, strict=False)
 
     @override
-    def get_raw_value(self, request: Request) -> dict[str, str | None]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        values = {
-            key: next_or(request.query.get(key, []))
+    def get_raw_value(self, request: Request) -> dict[str, str | None]:
+        not_found = object()
+        values: dict[str, Any] = {
+            key: value
             for key in self.possible_names
+            if (value := next_or(request.query.get(key, [not_found])))
+            is not not_found
         }
         for field in self.fields:
             if (

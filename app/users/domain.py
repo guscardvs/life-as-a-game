@@ -4,7 +4,13 @@ from escudeiro.data import data
 
 from app.users import schemas
 from app.users.repository import UserRepository
-from app.utils.database import BindClause, SessionContext, Where
+from app.utils.database import (
+    BindClause,
+    SessionContext,
+    Where,
+    comparison,
+    and_,
+)
 from app.utils.server import (
     FieldError,
     Page,
@@ -75,7 +81,16 @@ class GetUserUseCase:
     clause: BindClause
 
     async def execute(self) -> schemas.UserSchema:
-        return await UserRepository(self.context).get(self.clause)
+        return await UserRepository(self.context).get(
+            and_(
+                self.clause,
+                Where(
+                    "deleted_at",
+                    True,
+                    comparison.isnull,
+                ),
+            )
+        )
 
 
 @data

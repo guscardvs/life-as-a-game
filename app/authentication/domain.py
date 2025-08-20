@@ -1,11 +1,17 @@
 from escudeiro.data import data
+from escudeiro.misc import timezone
 
 from app.authentication.schemas import (
     AuthSchema,
     CreateSessionResponse,
 )
 from app.authentication.service import AuthenticationService
-from app.users.domain import GetUserUseCase, validate_password
+from app.users.domain import (
+    GetUserUseCase,
+    UpdateUserUseCase,
+    validate_password,
+)
+from app.users.repository import UserRepository
 from app.users.schemas import UserSchema
 from app.utils.cache import CacheContext
 from app.utils.database import SessionContext, Where, and_, comparison
@@ -23,7 +29,13 @@ class AuthenticateUseCase:
     ) -> CreateSessionResponse:
         service = AuthenticationService(self.context, self.cache)
         user = await self._validate_credentials()
-        return await service.create_session(user)
+        session = await service.create_session(user)
+        user.last_login = timezone.now()
+        _ = await UserRepository(self.context).update(
+            Where("id", user.id_), user
+        )
+
+        return session
 
     async def _validate_credentials(self) -> UserSchema:
         get_user = GetUserUseCase(

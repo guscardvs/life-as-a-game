@@ -31,8 +31,13 @@ class CommonMixin:
     @declared_attr.directive
     @classmethod
     def __tablename__(cls) -> str:
-        _, modname, *_ = cls.__module__.split(".")
-        classname = to_snake(cls.__name__.removesuffix("Entity"))
+        return cls.make_tablename(cls.__module__, cls.__name__)
+
+    @staticmethod
+    def make_tablename(module: str, pascalname: str) -> str:
+        _, modname, *_ = module.split(".")
+        classname = to_snake(pascalname.removesuffix("Entity"))
+        classname = classname.removesuffix("s") + "s"  # Ensure pluralization
         return f"{modname}__{classname}"
 
 

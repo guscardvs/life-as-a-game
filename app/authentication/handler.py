@@ -10,7 +10,7 @@ from blacksheep.server.openapi.common import (
     ResponseStatusType,
     SecurityInfo,
 )
-from guardpost import AuthenticationHandler, Identity
+from guardpost import AuthenticationHandler, AuthorizationStrategy, Identity
 from guardpost.common import AuthenticatedRequirement
 from openapidocs.v3 import OAuth2Security, OAuthFlow, OAuthFlows
 from rodi import Container
@@ -36,7 +36,7 @@ class AuthHandler(AuthenticationHandler):
         self.service = AuthenticationService(self.context, self.cache)
 
     @override
-    async def authenticate(self, context: Request) -> Identity | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def authenticate(self, context: Request) -> Identity | None:
         if context.identity is not None:
             return context.identity
 
@@ -58,15 +58,22 @@ class AuthHandler(AuthenticationHandler):
         return identity_user
 
 
-def make_auth_handler(app: Application) -> None:
+def make_auth_handler(
+    app: Application,
+    handler: type[AuthHandler] = AuthHandler,
+    *extra_policies: Policy,
+) -> AuthorizationStrategy:
     auth = app.use_authentication()
-    _ = auth.add(AuthHandler)
+    _ = auth.add(handler)
     services = cast(Container, app.services)
-    _ = services.register(AuthHandler)
+    _ = services.register(handler)
 
-    _ = app.use_authorization().add(
+    result = app.use_authorization().add(
         Policy(Authenticated, AuthenticatedRequirement())
     )
+    for policy in extra_policies:
+        result = result.add(policy)
+    return result
 
 
 TOKEN_URL = "/token"
@@ -100,6 +107,7 @@ def protected[**P, T](
     deprecated: bool | None = None,
     on_created: Callable[[Any, Any], None] | None = None,
     security: list[SecurityInfo] | None = None,
+    policy: str = Authenticated,
 ) -> Callable[P, T]: ...
 
 
@@ -118,6 +126,7 @@ def protected[**P, T](
     deprecated: bool | None = None,
     on_created: Callable[[Any, Any], None] | None = None,
     security: list[SecurityInfo] | None = None,
+    policy: str = Authenticated,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
@@ -135,6 +144,7 @@ def protected[**P, T](
     deprecated: bool | None = None,
     on_created: Callable[[Any, Any], None] | None = None,
     security: list[SecurityInfo] | None = None,
+    policy: str = Authenticated,
 ) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Decorator to protect a route with authentication.
@@ -153,7 +163,7 @@ def protected[**P, T](
         on_created=on_created,
         security=security,
     )
-    auth_decorator = auth(Authenticated)
+    auth_decorator = auth(policy)
 
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         return auth_decorator(docs_decorator(func))
