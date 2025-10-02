@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -272,6 +272,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/54/ed/ba12efcdea64cd24c51cbe607cb98d6e392025591f5d89775251c29baa31/escudeiro-0.2.17-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:f90315d70e142a3121f922de2a572d51f3a03dc7c9675e4eecb8a96c34139925", size = 1254204, upload-time = "2025-08-18T05:41:39.454Z" },
     { url = "https://files.pythonhosted.org/packages/a5/8f/ccf53decd7b88d0bfbaed57098e876adf280a613ac4de67b100c58c243d5/escudeiro-0.2.17-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:29617433c6eb2b1928e2c1abe40d5127bb0b63de20ed8dc0414dbbc8219aedd5", size = 1433849, upload-time = "2025-08-18T05:41:41.747Z" },
     { url = "https://files.pythonhosted.org/packages/73/72/e0528300046062f973ef83cb97b04b3bb0b38c5e17ceaf664f791544fb57/escudeiro-0.2.17-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:b5ac4a25258776f1e4f9635786b96ddf739a6d53b21411f063634cbfd5ca0a2d", size = 1256097, upload-time = "2025-08-18T05:41:48.75Z" },
+    { url = "https://files.pythonhosted.org/packages/63/3c/0d21c32e162bfbf6a2eb3c009e500fd38480b23a941d3036f364e848af75/escudeiro-0.2.17-cp313-cp313-win_amd64.whl", hash = "sha256:0f3ab905187fac804e2dcc2028336b50b6a42ed54349bc1222d1f81c51b933d4", size = 1119085, upload-time = "2025-08-20T14:04:14.925Z" },
 ]
 
 [[package]]
@@ -308,11 +309,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2c/82/4ec69ffd8f84f5f46f4eda26817882d586c28b9fa24809820d6230d45e99/fakeredis-2.30.3.tar.gz", hash = "sha256:eac5aaced57e7dbe3e005eb4f82032978a7f100273b26158cbbcfa7c386ca7ec", size = 168472, upload-time = "2025-07-29T18:28:28.124Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/26/16ab46747e1aeed6c021da72bae500b6c42c0a5bb9d25d1af97c6f74d61f/fakeredis-2.30.3-py3-none-any.whl", hash = "sha256:56a6b082e8ff17434a5ae22e4efd12ae2bb9b363b477d8f166a790407ba65a7e", size = 116673, upload-time = "2025-07-29T18:28:26.24Z" },
-]
-
-[package.optional-dependencies]
-valkey = [
-    { name = "valkey" },
 ]
 
 [[package]]
@@ -457,7 +453,7 @@ dependencies = [
 dev = [
     { name = "aiosqlite" },
     { name = "coverage" },
-    { name = "fakeredis", extra = ["valkey"] },
+    { name = "fakeredis" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -486,7 +482,7 @@ requires-dist = [
 dev = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "coverage", specifier = ">=7.10.3" },
-    { name = "fakeredis", extras = ["valkey"], specifier = ">=2.30.3" },
+    { name = "fakeredis", specifier = ">=2.30.3" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
@@ -866,15 +862,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/19/f5b78616566ea68edd42aacaf645adbf71fbd83fc52281fba555dc27e3f1/uvloop-0.21.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f3df876acd7ec037a3d005b3ab85a7e4110422e4d9c1571d4fc89b0fc41b6816", size = 4701068, upload-time = "2024-10-14T23:38:06.385Z" },
     { url = "https://files.pythonhosted.org/packages/47/57/66f061ee118f413cd22a656de622925097170b9380b30091b78ea0c6ea75/uvloop-0.21.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:bd53ecc9a0f3d87ab847503c2e1552b690362e005ab54e8a48ba97da3924c0dc", size = 4454428, upload-time = "2024-10-14T23:38:08.416Z" },
     { url = "https://files.pythonhosted.org/packages/63/9a/0962b05b308494e3202d3f794a6e85abe471fe3cafdbcf95c2e8c713aabd/uvloop-0.21.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a5c39f217ab3c663dc699c04cbd50c13813e31d917642d459fdcec07555cc553", size = 4660018, upload-time = "2024-10-14T23:38:10.888Z" },
-]
-
-[[package]]
-name = "valkey"
-version = "6.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/38/d4/04b6a234e584e21ccb63b895ca9dfb4e759e4c139c1ab3f9484982ee6491/valkey-6.1.0.tar.gz", hash = "sha256:a652df15ed89c41935ffae6dfd09c56f4a9ab80b592e5ed9204d538e2ddad6d3", size = 4600944, upload-time = "2025-02-11T17:20:46.706Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/b0/c4d47032bbda89cff7af99c0b096db9b9453b9f0c1e24cf027aa616be389/valkey-6.1.0-py3-none-any.whl", hash = "sha256:cfe769edae894f74ac946eff1e93f7d7f466032c3030ba7e9d089a742459ac9c", size = 259302, upload-time = "2025-02-11T17:20:42.96Z" },
 ]
 
 [[package]]

@@ -24,7 +24,6 @@ from app.authorization.domain import (
     UpdateRoleUseCase,
 )
 from app.authorization.typedef import ADMIN_ROLE_NAME, Admin
-from app.users.schemas import UserOutSchema
 from app.utils.database import SessionContext, Where, and_, comparison
 from app.utils.msgspec import FromMsgSpec, FromMsgSpecQuery
 from app.utils.server import (

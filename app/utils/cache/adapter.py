@@ -1,7 +1,7 @@
 from collections.abc import Callable, Coroutine
 from typing import Any, cast, override
 
-import valkey.asyncio as valkey
+import redis.asyncio as redis
 from blacksheep import Application
 from escudeiro.config import Env, get_env
 from escudeiro.context import AsyncAdapter, AsyncContext
@@ -12,23 +12,23 @@ from rodi import Container
 
 from app.utils.cache.config import CacheConfig
 
-CacheContext = AsyncContext[valkey.Valkey]
+CacheContext = AsyncContext[redis.Redis]
 
 
 @data
-class CacheAdapter(AsyncAdapter[valkey.Valkey]):
+class CacheAdapter(AsyncAdapter[redis.Redis]):
     config: CacheConfig
 
     @lazyfield
-    def pool(self) -> valkey.ConnectionPool:
+    def pool(self) -> redis.ConnectionPool:
         if get_env() is Env.TEST:
             import fakeredis
 
             return cast(
-                valkey.ConnectionPool,
+                redis.ConnectionPool,
                 fakeredis.FakeAsyncRedis(),
             )
-        return valkey.ConnectionPool.from_url(
+        return redis.ConnectionPool.from_url(
             self.config.make_uri().encode(),
             decode_responses=True,
         )
@@ -38,17 +38,17 @@ class CacheAdapter(AsyncAdapter[valkey.Valkey]):
             await self.pool.aclose()
 
     @override
-    async def new(self) -> valkey.Valkey:
+    async def new(self) -> redis.Redis:
         if get_env() is Env.TEST:
-            return cast(valkey.Valkey, self.pool)
-        return valkey.Valkey.from_pool(self.pool)
+            return cast(redis.Redis, self.pool)
+        return redis.Redis.from_pool(self.pool)
 
     @override
-    async def release(self, client: valkey.Valkey) -> None:
+    async def release(self, client: redis.Redis) -> None:
         return await client.aclose()
 
     @override
-    async def is_closed(self, client: valkey.Valkey) -> bool:
+    async def is_closed(self, client: redis.Redis) -> bool:
         return bool(client.connection)
 
     def context(self) -> CacheContext:
@@ -70,7 +70,7 @@ def make_cache_setup(
             try:
                 async with adapter.context() as client:
                     await client.ping()
-            except valkey.ConnectionError as e:
+            except redis.ConnectionError as e:
                 logger.error(f"Failed to connect to cache: {e}")
                 raise
             logger.info("Cache connected successfully.")
